@@ -1,8 +1,5 @@
 const express = require('express');
-const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const path = require('path');
-const fs = require('fs');
 const qr = require('qr-image');
 require('dotenv').config();
 
@@ -18,49 +15,9 @@ cloudinary.config({
 
 // Middleware
 app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.set('view engine', 'ejs');
-
-// Configurar Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'public/uploads/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const originalName = file.originalname.replace(/[^a-zA-Z0-9.\-]/g, '_');
-    cb(null, Date.now() + '-' + originalName);
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/mov', 'video/avi', 'video/webm',
-      'application/pdf', 
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ];
-
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Tipo de archivo no soportado: ' + file.mimetype), false);
-    }
-  }
-});
 
 // Middleware para mobile detection
 app.use((req, res, next) => {
@@ -69,22 +26,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// Función para convertir Data URI a Buffer (reemplaza data-uri-to-buffer)
+// Función para convertir Data URI a Buffer
 function dataUriToBuffer(dataUri) {
   try {
-    // Verificar que es un data URI válido
     if (!dataUri.startsWith('data:')) {
       throw new Error('Invalid data URI');
     }
     
-    // Extraer la parte base64 del data URI
     const base64Data = dataUri.split(',')[1];
     
     if (!base64Data) {
       throw new Error('Invalid data URI format');
     }
     
-    // Convertir base64 a buffer
     const buffer = Buffer.from(base64Data, 'base64');
     return buffer;
   } catch (error) {
@@ -105,71 +59,104 @@ app.get('/', (req, res) => {
   });
 });
 
-// Subir archivo a Cloudinary
-app.post('/upload', upload.single('file'), async (req, res) => {
+// Subir archivo directamente a Cloudinary desde base64
+app.post('/upload', express.json({ limit: '50mb' }), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.render('index', {
-        title: 'Cloudinary QR Generator',
-        qrCode: null,
-        cloudinaryUrl: null,
-        uploadedFile: null,
-        customUrl: null,
-        error: 'Por favor selecciona un archivo',
-        isMobile: res.locals.isMobile
+    const { fileData, fileName, fileType } = req.body;
+
+    console.log('Recibiendo archivo:', fileName, 'Tipo:', fileType);
+
+    if (!fileData || !fileName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos de archivo incompletos'
       });
     }
 
+    // Determinar resource type para Cloudinary
     let resourceType = 'auto';
-    const mimeType = req.file.mimetype;
-
-    if (mimeType.startsWith('image/')) {
+    if (fileType && fileType.startsWith('image/')) {
       resourceType = 'image';
-    } else if (mimeType.startsWith('video/')) {
+    } else if (fileType && fileType.startsWith('video/')) {
       resourceType = 'video';
     } else {
       resourceType = 'raw';
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: resourceType,
-      use_filename: true,
-      unique_filename: true,
-      folder: 'qr-generator'
+    console.log('Subiendo a Cloudinary con resource_type:', resourceType);
+
+    // Validar que fileData sea un data URL válido
+    if (!fileData.startsWith('data:')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de datos inválido. Se esperaba data URL.'
+      });
+    }
+
+    // Extraer el contenido base64 del data URL
+    const base64Data = fileData.split(',')[1];
+    if (!base64Data) {
+      return res.status(400).json({
+        success: false,
+        error: 'Data URL mal formado'
+      });
+    }
+
+    // Subir directamente a Cloudinary usando upload_stream para mejor control
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: resourceType,
+          public_id: `qr-generator/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          overwrite: false,
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+
+      // Convertir base64 a buffer y enviar a Cloudinary
+      const buffer = Buffer.from(base64Data, 'base64');
+      uploadStream.end(buffer);
     });
 
-    fs.unlinkSync(req.file.path);
+    console.log('Archivo subido exitosamente:', uploadResult.secure_url);
 
-    res.render('index', {
-      title: 'Cloudinary QR Generator',
-      qrCode: null,
-      cloudinaryUrl: result.secure_url,
+    res.json({
+      success: true,
+      cloudinaryUrl: uploadResult.secure_url,
       uploadedFile: {
-        name: req.file.originalname,
+        name: fileName,
         type: resourceType,
-        size: (req.file.size / (1024 * 1024)).toFixed(2) + ' MB',
-        publicId: result.public_id
-      },
-      customUrl: null,
-      error: null,
-      isMobile: res.locals.isMobile
+        publicId: uploadResult.public_id,
+        format: uploadResult.format,
+        size: uploadResult.bytes ? (uploadResult.bytes / 1024).toFixed(2) + ' KB' : 'N/A'
+      }
     });
 
   } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
+    console.error('Error en upload:', error);
     
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    // Manejar errores específicos de Cloudinary
+    let errorMessage = 'Error al subir archivo';
+    if (error.message.includes('File size too large')) {
+      errorMessage = 'El archivo es demasiado grande';
+    } else if (error.message.includes('Invalid image file')) {
+      errorMessage = 'Archivo de imagen inválido';
+    } else if (error.message.includes('format')) {
+      errorMessage = 'Formato de archivo no soportado';
+    } else {
+      errorMessage = `Error: ${error.message}`;
     }
 
-    res.render('index', {
-      title: 'Cloudinary QR Generator',
-      qrCode: null,
-      cloudinaryUrl: null,
-      uploadedFile: null,
-      customUrl: null,
-      error: `Error al subir archivo: ${error.message}`,
-      isMobile: res.locals.isMobile
+    res.status(500).json({
+      success: false,
+      error: errorMessage
     });
   }
 });
@@ -181,17 +168,23 @@ app.post('/generate-qr', async (req, res) => {
     const urlToEncode = cloudinaryUrl || customUrl;
 
     if (!urlToEncode) {
-      return res.status(400).json({ error: 'No hay URL disponible' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'No hay URL disponible' 
+      });
     }
 
     // Validar URL
     try {
       new URL(urlToEncode);
     } catch (e) {
-      return res.status(400).json({ error: 'URL no válida' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'URL no válida' 
+      });
     }
 
-    // Generar QR con mejor calidad para mobile
+    // Generar QR
     const qr_png = qr.imageSync(urlToEncode, { 
       type: 'png',
       size: 10,
@@ -209,7 +202,10 @@ app.post('/generate-qr', async (req, res) => {
 
   } catch (error) {
     console.error('Error generating QR:', error);
-    res.status(500).json({ error: 'Error al generar código QR' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al generar código QR' 
+    });
   }
 });
 
@@ -219,7 +215,10 @@ app.post('/generate-custom-qr', async (req, res) => {
     const { customUrl } = req.body;
 
     if (!customUrl) {
-      return res.status(400).json({ error: 'Por favor ingresa una URL' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Por favor ingresa una URL' 
+      });
     }
 
     // Validar y formatear URL
@@ -231,7 +230,10 @@ app.post('/generate-custom-qr', async (req, res) => {
     try {
       new URL(formattedUrl);
     } catch (e) {
-      return res.status(400).json({ error: 'URL no válida' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'URL no válida' 
+      });
     }
 
     const qr_png = qr.imageSync(formattedUrl, { 
@@ -252,11 +254,14 @@ app.post('/generate-custom-qr', async (req, res) => {
 
   } catch (error) {
     console.error('Error generating custom QR:', error);
-    res.status(500).json({ error: 'Error al generar código QR' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al generar código QR' 
+    });
   }
 });
 
-// Descargar QR - CORREGIDO
+// Descargar QR
 app.get('/download-qr', (req, res) => {
   try {
     const { dataUri, filename = 'qrcode.png' } = req.query;
@@ -265,7 +270,6 @@ app.get('/download-qr', (req, res) => {
       return res.status(400).send('No hay código QR para descargar');
     }
 
-    // Usar nuestra función personalizada
     const buffer = dataUriToBuffer(dataUri);
     
     res.setHeader('Content-Type', 'image/png');
@@ -319,24 +323,39 @@ app.get('/files', async (req, res) => {
 
 // Ruta de salud
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Servidor funcionando correctamente' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Servidor funcionando correctamente',
+    cloudinary: {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'Configurado' : 'No configurado'
+    }
+  });
+});
+
+// Ruta de prueba de upload
+app.get('/test-upload', (req, res) => {
+  res.json({
+    message: 'Endpoint de upload funcionando',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Manejo de errores global
 app.use((error, req, res, next) => {
   console.error('Error global:', error);
-  res.status(500).render('index', {
-    title: 'Cloudinary QR Generator',
-    qrCode: null,
-    cloudinaryUrl: null,
-    uploadedFile: null,
-    customUrl: null,
-    error: 'Error interno del servidor',
-    isMobile: res.locals.isMobile
+  res.status(500).json({
+    success: false,
+    error: 'Error interno del servidor'
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📱 Modo mobile optimizado`);
-});
+// Export para Vercel
+module.exports = app;
+
+// Solo iniciar servidor si no estamos en Vercel
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`☁️  Cloudinary configurado: ${process.env.CLOUDINARY_CLOUD_NAME ? 'Sí' : 'No'}`);
+  });
+}

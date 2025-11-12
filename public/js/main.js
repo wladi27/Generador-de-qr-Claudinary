@@ -216,26 +216,20 @@ async function generateCustomQR() {
     }
 }
 
-// Manejo del formulario de subida
-document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
+// Nueva función para subir archivos convertidos a base64
+async function uploadFile(formData) {
+    const progressSection = document.getElementById('progressSection');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const uploadBtn = document.getElementById('uploadBtn');
     const fileInput = document.getElementById('fileInput');
     
     if (!fileInput.files.length) {
         showError('Por favor selecciona un archivo primero.');
         return;
     }
-    
-    await uploadFile(formData);
-});
 
-async function uploadFile(formData) {
-    const progressSection = document.getElementById('progressSection');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const uploadBtn = document.getElementById('uploadBtn');
+    const file = fileInput.files[0];
     
     // Mostrar progreso
     progressSection.classList.remove('hidden');
@@ -247,24 +241,54 @@ async function uploadFile(formData) {
         // Simular progreso
         const progressInterval = simulateProgress(progressFill, progressText);
         
-        const response = await fetch('/upload', {
-            method: 'POST',
-            body: formData
-        });
+        // Convertir archivo a base64
+        const base64Data = await fileToBase64(file);
         
         clearInterval(progressInterval);
         
-        if (response.ok) {
+        progressFill.style.width = '70%';
+        progressText.textContent = 'Subiendo a Cloudinary...';
+        
+        // Enviar a nuestro endpoint
+        const response = await fetch('/upload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                fileData: base64Data,
+                fileName: file.name,
+                fileType: file.type
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
             progressFill.style.width = '100%';
             progressText.textContent = '¡Subida completada!';
             
-            // Esperar un momento antes de recargar para mostrar el progreso completo
+            // Actualizar la interfaz sin recargar
             setTimeout(() => {
-                window.location.reload();
+                document.getElementById('urlInput').value = data.cloudinaryUrl;
+                document.getElementById('resultsSection').classList.remove('hidden');
+                showSuccess('Archivo subido exitosamente a Cloudinary');
+                
+                // Reset UI
+                uploadBtn.disabled = false;
+                uploadBtn.classList.remove('pulse-upload');
+                uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-2"></i>Subir a Cloudinary';
+                progressSection.classList.add('hidden');
+                clearFile();
+                
+                // Scroll to results
+                document.getElementById('resultsSection').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             }, 1000);
         } else {
-            const errorData = await response.text();
-            throw new Error(errorData || 'Error en la subida');
+            throw new Error(data.error);
         }
     } catch (error) {
         progressText.textContent = 'Error en la subida';
@@ -277,15 +301,31 @@ async function uploadFile(formData) {
     }
 }
 
+// Función para convertir File a Base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+// Manejo del formulario de subida
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    await uploadFile();
+});
+
 function simulateProgress(progressFill, progressText) {
     let progress = 0;
     const interval = setInterval(() => {
         progress += Math.random() * 15;
-        if (progress > 85) {
-            progress = 85;
+        if (progress > 65) {
+            progress = 65;
         }
         progressFill.style.width = `${progress}%`;
-        progressText.textContent = `Subiendo... ${Math.round(progress)}%`;
+        progressText.textContent = `Procesando archivo... ${Math.round(progress)}%`;
     }, 300);
     
     return interval;
@@ -562,17 +602,6 @@ if (isMobileDevice()) {
     document.head.appendChild(style);
 }
 
-// Inicializar service worker para funcionalidad offline (opcional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function(err) {
-            console.log('ServiceWorker registration failed: ', err);
-        });
-    });
-}
-
 // Utility function para formatear URLs
 function formatUrl(url) {
     if (!url) return '';
@@ -602,3 +631,63 @@ document.addEventListener('focusout', function(e) {
         }, 300);
     }
 });
+
+// Inicializar service worker para funcionalidad offline (opcional)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(registration) {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function(err) {
+            console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+}
+
+// Función para validar tipos de archivo
+function isValidFileType(file) {
+    const validTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/mov', 'video/avi', 'video/webm',
+        'application/pdf', 
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    return validTypes.includes(file.type);
+}
+
+// Función para obtener el icono según el tipo de archivo
+function getFileIcon(mimeType) {
+    if (mimeType.startsWith('image/')) return 'fa-image';
+    if (mimeType.startsWith('video/')) return 'fa-video';
+    if (mimeType.includes('pdf')) return 'fa-file-pdf';
+    if (mimeType.includes('word')) return 'fa-file-word';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'fa-file-excel';
+    if (mimeType.includes('text')) return 'fa-file-alt';
+    return 'fa-file';
+}
+
+// Función para formatear tamaño de archivo
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Exportar funciones para uso global (si es necesario)
+window.copyFileUrl = copyFileUrl;
+window.deleteFile = deleteFile;
+window.clearFile = clearFile;
+window.copyUrl = copyUrl;
+window.generateQR = generateQR;
+window.downloadQR = downloadQR;
+window.generateCustomQR = generateCustomQR;
+
+console.log('✅ Cloudinary QR Generator loaded successfully');
