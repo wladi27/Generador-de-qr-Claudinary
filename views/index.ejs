@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#2563eb">
     <title><%= title %></title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos optimizados para iPhone */
+        /* Estilos optimizados para iPhone y mejoras visuales */
         .safe-area-padding {
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
@@ -25,7 +25,7 @@
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
@@ -38,11 +38,10 @@
         }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
         }
         
-        /* Mejoras para touch en mobile */
         .btn-touch {
             min-height: 44px;
             min-width: 44px;
@@ -50,130 +49,243 @@
         
         .input-touch {
             min-height: 48px;
-            font-size: 16px; /* Previene zoom en iOS */
+            font-size: 16px;
         }
         
-        /* Scroll suave */
         html {
             scroll-behavior: smooth;
         }
         
-        /* Prevenir selección de texto en botones */
         .no-select {
             -webkit-touch-callout: none;
             -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
+        }
+        
+        /* Mejoras de diseño para tarjetas */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Animación de entrada para tarjetas */
+        .card-enter {
+            opacity: 0;
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Efectos de brillo en botones */
+        .btn-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-shine::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-shine:hover::after {
+            left: 100%;
+        }
+        
+        /* Mejora de contraste y legibilidad */
+        .text-balance {
+            text-wrap: balance;
+        }
+        
+        /* Estilos personalizados para el grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+        
+        /* Mejora para la visualización del QR */
+        .qr-wrapper {
+            background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.03) 0%, rgba(220, 38, 38, 0.03) 100%);
+            border: 1px solid rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Barra de progreso mejorada */
+        .progress-gradient {
+            background: linear-gradient(90deg, #2563eb, #dc2626);
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen safe-area-padding">
-    <div class="container mx-auto px-4 py-4 md:py-8">
-        <!-- Header -->
-        <div class="text-center mb-8 md:mb-12 fade-in">
-            <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-qrcode text-blue-500 mr-3"></i>
-                QR Generator
-            </h1>
-            <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-                Genera códigos QR desde Cloudinary o cualquier URL
-            </p>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-red-50 min-h-screen safe-area-padding">
+    <div class="container mx-auto px-4 py-6 md:py-10 max-w-7xl">
+        <!-- Header mejorado con gradiente y sombra -->
+        <div class="text-center mb-10 fade-in">
+            <div class="relative inline-block">
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-red-600 rounded-full blur-3xl opacity-20"></div>
+                <div class="relative bg-white bg-opacity-90 backdrop-blur-sm px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-3">
+                        <span class="bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
+                            <i class="fas fa-qrcode mr-3 text-blue-600"></i>
+                            Generador QR
+                        </span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto text-balance">
+                        Transforma cualquier enlace en un código QR instantáneo
+                    </p>
+                </div>
+            </div>
             
-            <!-- Navigation -->
-            <div class="mt-6 flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-                <a href="/" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium btn-touch no-select">
-                    <i class="fas fa-home mr-2"></i>Inicio
+            <!-- Navigation mejorada con glassmorphism -->
+            <div class="mt-8 flex flex-wrap justify-center gap-3">
+                <a href="/" class="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3.5 rounded-xl transition-all duration-300 font-semibold btn-touch no-select btn-shine shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30">
+                    <i class="fas fa-home mr-2 group-hover:scale-110 transition-transform"></i>
+                    Inicio
                 </a>
-                <a href="/files" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium btn-touch no-select">
-                    <i class="fas fa-list mr-2"></i>Ver Archivos
+                <a href="/files" class="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-3.5 rounded-xl transition-all duration-300 font-semibold btn-touch no-select btn-shine shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30">
+                    <i class="fas fa-list mr-2 group-hover:scale-110 transition-transform"></i>
+                    Mis Archivos
                 </a>
             </div>
         </div>
 
-        <!-- Error Message -->
+        <!-- Error Message mejorado -->
         <% if (error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 fade-in">
+            <div class="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 text-red-800 px-6 py-4 rounded-2xl mb-8 fade-in shadow-md" role="alert">
                 <div class="flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-3"></i>
-                    <span><%= error %></span>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-2xl text-red-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="font-semibold">Error</p>
+                        <p class="text-sm text-red-700"><%= error %></p>
+                    </div>
                 </div>
             </div>
         <% } %>
 
-        <!-- Main Content -->
-        <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Grid de tarjetas principal - MEJOR DISTRIBUCIÓN -->
+        <div class="cards-grid">
             <!-- Sección URL Personalizada -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6 fade-in">
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-link text-purple-500 mr-3"></i>
-                    Generar QR desde URL
-                </h2>
-                
-                <form id="customUrlForm" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        <input 
-                            type="url" 
-                            name="customUrl" 
-                            id="customUrlInput"
-                            placeholder="https://ejemplo.com o ejemplo.com"
-                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 input-touch"
-                            pattern="https?://.+"
-                            title="Ingresa una URL válida"
-                        >
-                        <button 
-                            type="submit"
-                            id="generateCustomQRBtn"
-                            class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 btn-touch no-select"
-                        >
-                            <i class="fas fa-qrcode mr-2"></i>
-                            Generar QR
-                        </button>
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6 md:p-7 card-hover card-enter flex flex-col h-full" style="animation-delay: 0.1s;">
+                <div class="flex items-center mb-5">
+                    <div class="bg-gradient-to-br from-red-100 to-red-200 p-3 rounded-xl mr-4">
+                        <i class="fas fa-link text-2xl text-red-600"></i>
                     </div>
-                    <p class="text-sm text-gray-500 text-center">
-                        Soporta cualquier URL: sitios web, enlaces, etc.
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
+                        QR desde URL
+                    </h2>
+                </div>
+                
+                <form id="customUrlForm" class="space-y-5 flex-1 flex flex-col">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-globe mr-2 text-red-500"></i>
+                            Ingresa tu enlace
+                        </label>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input 
+                                type="url" 
+                                name="customUrl" 
+                                id="customUrlInput"
+                                placeholder="https://ejemplo.com"
+                                class="flex-1 px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-200 focus:border-red-500 transition-all duration-200 input-touch bg-gray-50 hover:bg-white"
+                                pattern="https?://.+"
+                                title="Ingresa una URL válida (incluye http:// o https://)"
+                            >
+                            <button 
+                                type="submit"
+                                id="generateCustomQRBtn"
+                                class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300 btn-touch no-select btn-shine shadow-md hover:shadow-lg flex items-center justify-center"
+                            >
+                                <i class="fas fa-qrcode mr-2"></i>
+                                Generar
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-red-400"></i>
+                        Soporta cualquier URL: sitios web, imágenes, videos, documentos
                     </p>
                 </form>
             </div>
 
             <!-- Upload Section -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6 fade-in">
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-cloud-upload-alt text-blue-500 mr-3"></i>
-                    Subir a Cloudinary
-                </h2>
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6 md:p-7 card-hover card-enter flex flex-col h-full" style="animation-delay: 0.2s;">
+                <div class="flex items-center mb-5">
+                    <div class="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl mr-4">
+                        <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+                        Subir Archivo
+                    </h2>
+                </div>
                 
-                <form id="uploadForm" enctype="multipart/form-data" class="space-y-6">
-                    <!-- File Input -->
-                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 md:p-8 text-center transition-colors hover:border-blue-400 cursor-pointer btn-touch" 
-                         onclick="document.getElementById('fileInput').click()">
-                        <i class="fas fa-cloud-upload-alt text-3xl md:text-4xl text-gray-400 mb-4"></i>
-                        <input 
-                            type="file" 
-                            name="file" 
-                            id="fileInput" 
-                            class="hidden" 
-                            accept="image/*,video/*,.pdf,.doc,.docx,.txt,.xls,.xlsx"
-                        >
-                        <div>
-                            <p class="text-base md:text-lg text-gray-600 mb-2">Toca para seleccionar un archivo</p>
-                            <p class="text-xs md:text-sm text-gray-500">Imágenes, Videos, PDF, Word, Excel</p>
-                            <p class="text-xs md:text-sm text-gray-500 mt-1">Máximo: 50MB</p>
+                <form id="uploadForm" enctype="multipart/form-data" class="space-y-5 flex-1 flex flex-col">
+                    <!-- File Input mejorado -->
+                    <div class="flex-1">
+                        <div class="border-3 border-dashed border-gray-300 rounded-2xl p-8 text-center transition-all duration-300 hover:border-blue-500 hover:bg-blue-50/30 cursor-pointer btn-touch group" 
+                             onclick="document.getElementById('fileInput').click()">
+                            <div class="space-y-3">
+                                <div class="bg-gradient-to-br from-blue-100 to-blue-200 rounded-full p-4 w-20 h-20 mx-auto group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-gray-700 font-semibold mb-1">Toca para seleccionar archivo</p>
+                                    <p class="text-sm text-gray-500">o arrastra y suelta aquí</p>
+                                </div>
+                                <input 
+                                    type="file" 
+                                    name="file" 
+                                    id="fileInput" 
+                                    class="hidden" 
+                                    accept="image/*,video/*,.pdf,.doc,.docx,.txt,.xls,.xlsx"
+                                >
+                                <div class="flex flex-wrap justify-center gap-2 text-xs text-gray-500">
+                                    <span class="bg-gray-100 px-3 py-1.5 rounded-full">Imágenes</span>
+                                    <span class="bg-gray-100 px-3 py-1.5 rounded-full">Videos</span>
+                                    <span class="bg-gray-100 px-3 py-1.5 rounded-full">PDF</span>
+                                    <span class="bg-gray-100 px-3 py-1.5 rounded-full">Office</span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-2">
+                                    <i class="fas fa-database mr-1"></i>
+                                    Máximo: 50MB
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- File Info -->
-                    <div id="fileInfo" class="hidden p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <!-- File Info mejorado -->
+                    <div id="fileInfo" class="hidden bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
-                                <i class="fas fa-file text-blue-500 text-lg md:text-xl"></i>
+                                <div class="bg-blue-200 p-2 rounded-lg">
+                                    <i id="fileIcon" class="fas fa-file text-blue-700 text-xl"></i>
+                                </div>
                                 <div>
-                                    <p id="fileName" class="font-semibold text-gray-800 text-sm md:text-base"></p>
-                                    <p id="fileSize" class="text-xs md:text-sm text-gray-600"></p>
+                                    <p id="fileName" class="font-semibold text-gray-800"></p>
+                                    <p id="fileSize" class="text-xs text-gray-600"></p>
                                 </div>
                             </div>
-                            <button type="button" onclick="clearFile()" class="text-red-500 hover:text-red-700 btn-touch">
+                            <button type="button" onclick="clearFile()" class="bg-white hover:bg-red-50 text-red-600 hover:text-red-700 p-2 rounded-lg transition-colors btn-touch">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -183,113 +295,179 @@
                     <button 
                         type="submit" 
                         id="uploadBtn"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-base md:text-lg btn-touch no-select hidden"
+                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-4 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 text-lg btn-touch no-select btn-shine shadow-md hover:shadow-lg hidden"
                     >
                         <i class="fas fa-cloud-upload-alt mr-2"></i>
                         Subir a Cloudinary
                     </button>
 
-                    <!-- Progress Bar -->
-                    <div id="progressSection" class="hidden space-y-2">
-                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div id="progressFill" class="bg-blue-600 h-2 rounded-full progress-fill w-0"></div>
+                    <!-- Progress Bar mejorada -->
+                    <div id="progressSection" class="hidden space-y-3">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-700 font-medium">Subiendo...</span>
+                            <span id="progressPercentage" class="text-blue-600 font-bold">0%</span>
                         </div>
-                        <p id="progressText" class="text-sm text-gray-600 text-center">Preparando subida...</p>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div id="progressFill" class="progress-gradient h-3 rounded-full w-0 transition-all duration-300"></div>
+                        </div>
+                        <p id="progressText" class="text-sm text-gray-600 text-center"></p>
                     </div>
                 </form>
             </div>
+        </div>
 
-            <!-- Results Section -->
-            <div id="resultsSection" class="hidden fade-in">
-                <!-- Cloudinary URL -->
-                <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6 mb-6">
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-link text-green-500 mr-3"></i>
+        <!-- Results Section - Tarjetas independientes -->
+        <div id="resultsSection" class="hidden mt-8 space-y-6 fade-in">
+            <!-- Cloudinary URL Card -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6 md:p-7 card-hover card-enter" style="animation-delay: 0.3s;">
+                <div class="flex items-center mb-5">
+                    <div class="bg-gradient-to-br from-blue-100 to-purple-100 p-3 rounded-xl mr-4">
+                        <i class="fas fa-link text-2xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         URL Generada
                     </h2>
-                    
-                    <div class="space-y-4">
-                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1 relative">
                             <input 
                                 type="text" 
                                 id="urlInput"
                                 readonly
-                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50 input-touch text-sm md:text-base"
+                                class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 bg-gray-50 text-gray-700 font-mono text-sm pr-12"
                                 placeholder="La URL aparecerá aquí..."
                             >
                             <button 
                                 onclick="copyUrl()" 
-                                id="copyUrlBtn"
-                                class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 sm:px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 btn-touch no-select"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg transition-colors btn-touch"
+                                title="Copiar URL"
                             >
-                                <i class="fas fa-copy mr-2"></i>Copiar
+                                <i class="fas fa-copy"></i>
                             </button>
                         </div>
-                        
-                        <button 
-                            onclick="generateQR()" 
-                            id="generateQRBtn"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-base md:text-lg btn-touch no-select"
-                        >
-                            <i class="fas fa-qrcode mr-2"></i>
-                            Generar Código QR
-                        </button>
                     </div>
-                </div>
-
-                <!-- QR Code Section -->
-                <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6">
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center">
-                        <i class="fas fa-qrcode text-purple-500 mr-3"></i>
-                        Código QR
-                    </h2>
                     
-                    <div class="text-center space-y-6">
-                        <div id="qrContainer" class="hidden">
-                            <div class="bg-gray-50 rounded-lg p-4 md:p-6 inline-block max-w-full">
-                                <img id="qrImage" src="" alt="Código QR" class="mx-auto max-w-full h-auto" style="max-width: 280px;">
-                            </div>
-                        </div>
-                        
-                        <div id="noQR" class="text-gray-500 py-6 md:py-8">
-                            <i class="fas fa-qrcode text-3xl md:text-4xl mb-4"></i>
-                            <p class="text-sm md:text-base">El código QR aparecerá aquí</p>
-                        </div>
-                        
-                        <button 
-                            onclick="downloadQR()" 
-                            id="downloadQRBtn"
-                            class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 btn-touch no-select hidden"
-                        >
-                            <i class="fas fa-download mr-2"></i>
-                            Descargar QR
-                        </button>
-                    </div>
+                    <button 
+                        onclick="generateQR()" 
+                        id="generateQRBtn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-4 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 text-lg btn-touch no-select btn-shine shadow-md hover:shadow-lg"
+                    >
+                        <i class="fas fa-qrcode mr-2"></i>
+                        Generar Código QR
+                    </button>
                 </div>
             </div>
 
-            <!-- Uploaded File Info -->
-            <% if (uploadedFile) { %>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4 fade-in">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <i class="fas fa-check-circle text-green-500 text-lg md:text-xl"></i>
-                            <div>
-                                <p class="font-semibold text-green-800 text-sm md:text-base">¡Archivo subido exitosamente!</p>
-                                <p class="text-xs md:text-sm text-green-600">
-                                    <%= uploadedFile.name %> • <%= uploadedFile.size %> • <%= uploadedFile.type %>
-                                </p>
-                            </div>
+            <!-- QR Code Card -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6 md:p-7 card-hover card-enter" style="animation-delay: 0.4s;">
+                <div class="flex items-center mb-5">
+                    <div class="bg-gradient-to-br from-red-100 to-orange-100 p-3 rounded-xl mr-4">
+                        <i class="fas fa-qrcode text-2xl text-red-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                        Código QR
+                    </h2>
+                </div>
+                
+                <div class="text-center space-y-6">
+                    <div id="qrContainer" class="hidden">
+                        <div class="qr-wrapper rounded-2xl p-6 inline-block max-w-full">
+                            <img id="qrImage" src="" alt="Código QR" class="mx-auto max-w-full h-auto rounded-lg shadow-lg" style="max-width: 280px;">
                         </div>
                     </div>
+                    
+                    <div id="noQR" class="py-8">
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8 inline-block">
+                            <i class="fas fa-qrcode text-6xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-600 text-lg">Esperando código QR...</p>
+                            <p class="text-sm text-gray-500 mt-2">Genera un QR para visualizarlo aquí</p>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        onclick="downloadQR()" 
+                        id="downloadQRBtn"
+                        class="inline-flex items-center bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300 btn-touch no-select btn-shine shadow-md hover:shadow-lg hidden"
+                    >
+                        <i class="fas fa-download mr-2"></i>
+                        Descargar QR
+                        <span class="ml-2 text-sm opacity-75">PNG</span>
+                    </button>
                 </div>
-            <% } %>
+            </div>
         </div>
 
-    
+        <!-- Uploaded File Info - Toast style -->
+        <% if (uploadedFile) { %>
+            <div class="fixed bottom-6 right-6 max-w-md bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl shadow-2xl p-5 fade-in z-50">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="bg-white/20 rounded-lg p-2">
+                            <i class="fas fa-check-circle text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <p class="font-bold text-lg">¡Archivo subido exitosamente!</p>
+                        <p class="text-sm text-white/90 mt-1">
+                            <%= uploadedFile.name %> • <%= uploadedFile.size %>
+                        </p>
+                        <div class="mt-2 flex gap-2">
+                            <span class="bg-white/20 px-3 py-1.5 rounded-full text-xs">
+                                <i class="fas fa-tag mr-1"></i><%= uploadedFile.type %>
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-white/80 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        <% } %>
     </div>
 
     <!-- JavaScript -->
     <script src="/js/main.js"></script>
+    
+    <script>
+        // Mejora del feedback visual para el input de archivo
+        document.getElementById('fileInput')?.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const fileIcon = document.getElementById('fileIcon');
+                
+                // Cambiar icono según tipo de archivo
+                if (file.type.includes('image')) {
+                    fileIcon.className = 'fas fa-file-image text-blue-700 text-xl';
+                } else if (file.type.includes('video')) {
+                    fileIcon.className = 'fas fa-file-video text-blue-700 text-xl';
+                } else if (file.type.includes('pdf')) {
+                    fileIcon.className = 'fas fa-file-pdf text-red-700 text-xl';
+                } else {
+                    fileIcon.className = 'fas fa-file-alt text-blue-700 text-xl';
+                }
+            }
+        });
+        
+        // Animación de entrada para las tarjetas
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card-enter');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+        
+        // Función para limpiar archivo
+        window.clearFile = function() {
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            uploadBtn.classList.add('hidden');
+        };
+    </script>
 </body>
 </html>

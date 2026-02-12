@@ -132,7 +132,7 @@ function showSuccess(message) {
     if (!successDiv) {
         successDiv = document.createElement('div');
         successDiv.id = 'successMessage';
-        successDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 fade-in';
+        successDiv.className = 'bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg mb-6 fade-in';
         document.querySelector('.container').insertBefore(successDiv, document.querySelector('.container').firstChild);
     }
     
@@ -140,7 +140,7 @@ function showSuccess(message) {
         <div class="flex items-center">
             <i class="fas fa-check-circle mr-3"></i>
             <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700 btn-touch">
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-blue-500 hover:text-blue-700 btn-touch">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -346,15 +346,15 @@ function copyUrl() {
         const copyBtn = document.getElementById('copyUrlBtn');
         const originalText = copyBtn.innerHTML;
         copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copiado!';
-        copyBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
-        copyBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        copyBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+        copyBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         
         showSuccess('URL copiada al portapapeles');
         
         setTimeout(() => {
             copyBtn.innerHTML = originalText;
-            copyBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            copyBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+            copyBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            copyBtn.classList.add('bg-red-600', 'hover:bg-red-700');
         }, 2000);
     }).catch(err => {
         // Fallback para navegadores antiguos
